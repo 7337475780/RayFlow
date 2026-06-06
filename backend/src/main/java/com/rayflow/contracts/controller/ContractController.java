@@ -4,6 +4,8 @@ import com.rayflow.contracts.dto.ContractResponse;
 import com.rayflow.contracts.dto.WorkflowHistoryResponse;
 import com.rayflow.contracts.entity.ContractStatus;
 import com.rayflow.contracts.service.ContractService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Validated
 @CrossOrigin(origins = "*") // Allows API consumption by the Next.js frontend
+@Tag(name = "Contracts", description = "Endpoints for managing contract metadata and tracking approval workflows")
 public class ContractController {
 
     private final ContractService contractService;
@@ -34,6 +37,10 @@ public class ContractController {
     );
 
     @GetMapping
+    @Operation(
+        summary = "Get paginated list of contracts", 
+        description = "Retrieves a page of contracts with options to filter by title search, owner name, status, and customize sorting parameters."
+    )
     public ResponseEntity<Page<ContractResponse>> getContracts(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String owner,
@@ -54,12 +61,20 @@ public class ContractController {
     }
 
     @GetMapping("/{id}")
+    @Operation(
+        summary = "Get contract details by ID", 
+        description = "Retrieves specific metadata details for a contract using its UUID. Throws 404 if the contract does not exist."
+    )
     public ResponseEntity<ContractResponse> getContractById(@PathVariable UUID id) {
         ContractResponse contract = contractService.getContractById(id);
         return ResponseEntity.ok(contract);
     }
 
     @GetMapping("/{id}/history")
+    @Operation(
+        summary = "Get contract workflow history", 
+        description = "Retrieves chronological workflow lifecycle transitions for a specific contract in reverse chronological order."
+    )
     public ResponseEntity<List<WorkflowHistoryResponse>> getContractHistory(@PathVariable UUID id) {
         List<WorkflowHistoryResponse> history = contractService.getContractHistory(id);
         return ResponseEntity.ok(history);
