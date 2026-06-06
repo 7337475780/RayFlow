@@ -125,7 +125,59 @@ npm test
 
 ---
 
-## 6. Assumptions & Architectural Boundaries
+---
+
+## 6. Production Cloud Deployment (Neon + Render + Vercel)
+
+This project is configured for cloud deployment across serverless and container platforms:
+
+### 6.1 Database Setup (Neon PostgreSQL)
+1.  Sign up at [Neon.tech](https://neon.tech/) and create a new serverless PostgreSQL project.
+2.  Retrieve your database connection URL (e.g., `postgresql://username:password@ep-host-123456.us-east-2.aws.neon.tech/neondb?sslmode=require`).
+3.  Use a client (like DBeaver or PGAdmin) to execute `db/schema.sql` and `db/sample_data.sql` to initialize your tables and seed data.
+
+### 6.2 Backend Deployment (Render)
+1.  Create a free account on [Render.com](https://render.com/).
+2.  Select **New > Blueprint** and link your Git repository.
+3.  Render parses `render.yaml` and provisions a new web service.
+4.  In the environment variables configuration, populate the sync keys:
+    - `DATABASE_URL`: Set to standard JDBC format: `jdbc:postgresql://<neon-host>/neondb?sslmode=require`
+    - `DATABASE_USERNAME`: `<neon-username>`
+    - `DATABASE_PASSWORD`: `<neon-password>`
+    - `CORS_ALLOWED_ORIGINS`: Set to your Vercel frontend URL.
+
+### 6.3 Frontend Deployment (Vercel)
+1.  Deploy a new project on [Vercel.com](https://vercel.com/) linked to your Git repository.
+2.  Set the Root Directory to `frontend`.
+3.  Configure the environment variable inside the Vercel Settings panel:
+    - `NEXT_PUBLIC_API_BASE_URL`: Set to your Render backend web service URL (e.g., `https://rayflow-api.onrender.com`).
+4.  Click Deploy. Vercel compiles the Next.js page components and serves the static HTML frames.
+
+---
+
+## 7. Environment Variables Reference
+
+| Variable Name | Description | Default / Example |
+| :--- | :--- | :--- |
+| `DB_NAME` | Database name for local postgres. | `rayflow_db` |
+| `DB_USER` | Database username for local postgres. | `postgres` |
+| `DB_PASSWORD` | Database password for local postgres. | `postgres` |
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile (`dev` or `prod`). | `prod` (in cloud) |
+| `CORS_ALLOWED_ORIGINS` | Whitelisted client origins for CORS protection. | `https://rayflow.vercel.app` |
+| `RENDER_EXTERNAL_URL` | The external HTTPS endpoint URL of the backend. | `https://rayflow-api.onrender.com` |
+| `NEXT_PUBLIC_API_BASE_URL` | Frontend pointer URL target mapping the API context. | `https://rayflow-api.onrender.com` |
+
+---
+
+## 8. Troubleshooting Guide
+
+*   **Mixed Content Error in Swagger UI:** If the browser blocks API requests from Swagger UI, verify `RENDER_EXTERNAL_URL` env variable is set to the HTTPS URL on Render.
+*   **CORS Block on Frontend Dashboard:** Verify that `CORS_ALLOWED_ORIGINS` in Render is set to the exact domain name of your Vercel app (including `https://`).
+*   **Flyway Migration Exceptions:** Neon connections can sleep during idle periods. We configured Hikari CP connection timeouts to 30s in `application-prod.properties` to mitigate wake-up lag. If migrations fail, trigger a service restart on Render.
+
+---
+
+## 9. Assumptions & Architectural Boundaries
 
 1.  **Read-Only Focus:** Authentication mechanisms are mocked for this technical assessment. CORS is configured to allow `*` origins in dev environments to simplify local client consumption.
 2.  **Date-Time Precision:** Timestamps are managed as UTC zones (`TIMESTAMPTZ` / `Instant`), and the UI translates values to the local browser timezone.

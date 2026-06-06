@@ -32,7 +32,7 @@ export default async function DashboardPage(props: {
 
   try {
     contractsPage = await api.getContracts(filters);
-  } catch (error: any) {
+  } catch (error) {
     errorMsg = error instanceof Error 
         ? error.message 
         : 'Could not connect to the RayFlow API services. Please verify the backend is running.';

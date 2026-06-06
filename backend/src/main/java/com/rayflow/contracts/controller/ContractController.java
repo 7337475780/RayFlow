@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/contracts")
 @RequiredArgsConstructor
 @Validated
-@CrossOrigin(origins = "*") // Allows API consumption by the Next.js frontend
+@CrossOrigin(origins = "${cors.allowed-origins:*}") // Restricts client domain access dynamically
 @Tag(name = "Contracts", description = "Endpoints for managing contract metadata and tracking approval workflows")
 public class ContractController {
 

@@ -1,4 +1,5 @@
-import { api } from '@/lib/api';
+import { api, ApiException } from '@/lib/api';
+import { Contract, WorkflowHistory } from '@/types';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -7,8 +8,8 @@ export default async function ContractDetailsPage(props: {
 }) {
   const { id } = await props.params;
 
-  let contract;
-  let history = [];
+  let contract: Contract | undefined;
+  let history: WorkflowHistory[] = [];
   let errorMsg: string | undefined;
 
   try {
@@ -19,8 +20,8 @@ export default async function ContractDetailsPage(props: {
     ]);
     contract = contractData;
     history = historyData;
-  } catch (error: any) {
-    if (error?.status === 404) {
+  } catch (error) {
+    if (error instanceof ApiException && error.status === 404) {
       // Trigger Next.js standard 404 handler if contract ID does not exist
       notFound();
     }

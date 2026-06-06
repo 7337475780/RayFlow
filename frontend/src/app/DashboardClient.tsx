@@ -217,7 +217,7 @@ export default function DashboardClient({ initialContracts, initialFilters, erro
                           <span style={{ fontSize: '36px' }}>🔍</span>
                           <h2>No Contracts Available</h2>
                           <p style={{ maxWidth: '440px', margin: '0 auto' }}>
-                            We couldn't find matching records for your current parameters. Try clearing your filter queries.
+                            We could not find matching records for your current parameters. Try clearing your filter queries.
                           </p>
                         </div>
                       </td>
