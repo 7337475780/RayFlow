@@ -22,7 +22,7 @@ INSERT INTO contracts (id, title, description, status, owner_name, created_at, u
 ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 
  'Commercial Office Lease - Seattle Headquarters', 
  'Lease agreement for the 4th floor of the downtown office complex.', 
- 'APPROVED', 
+ 'APPROVED',
  'Charlie Brown', 
  NOW() - INTERVAL '30 days', 
  NOW() - INTERVAL '20 days'),
