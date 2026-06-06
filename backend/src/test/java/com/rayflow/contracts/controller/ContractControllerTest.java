@@ -42,7 +42,7 @@ class ContractControllerTest {
         PageImpl<ContractResponse> page = new PageImpl<>(List.of(response));
         when(contractService.getContracts(any(), any(), any(), any(Pageable.class))).thenReturn(page);
 
-        mockMvc.perform(get("/api/contracts")
+        mockMvc.perform(get("/api/v1/contracts")
                         .param("title", "Lease")
                         .param("page", "0")
                         .param("size", "10")
@@ -54,6 +54,42 @@ class ContractControllerTest {
     }
 
     @Test
+    void getContracts_NegativePage_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/contracts")
+                        .param("page", "-1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.validationErrors[0].field").value("page"))
+                .andExpect(jsonPath("$.validationErrors[0].message").value("must be greater than or equal to 0"));
+    }
+
+    @Test
+    void getContracts_ZeroPageSize_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/contracts")
+                        .param("size", "0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.validationErrors[0].field").value("size"))
+                .andExpect(jsonPath("$.validationErrors[0].message").value("must be greater than or equal to 1"));
+    }
+
+    @Test
+    void getContracts_ExceededPageSize_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/contracts")
+                        .param("size", "150")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.validationErrors[0].field").value("size"))
+                .andExpect(jsonPath("$.validationErrors[0].message").value("must be less than or equal to 100"));
+    }
+
+    @Test
     void getContractById_Success() throws Exception {
         UUID id = UUID.randomUUID();
         ContractResponse response = new ContractResponse(
@@ -62,7 +98,7 @@ class ContractControllerTest {
 
         when(contractService.getContractById(id)).thenReturn(response);
 
-        mockMvc.perform(get("/api/contracts/{id}", id)
+        mockMvc.perform(get("/api/v1/contracts/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
@@ -74,7 +110,7 @@ class ContractControllerTest {
         UUID id = UUID.randomUUID();
         when(contractService.getContractById(id)).thenThrow(new ResourceNotFoundException("Contract not found"));
 
-        mockMvc.perform(get("/api/contracts/{id}", id)
+        mockMvc.perform(get("/api/v1/contracts/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
@@ -90,7 +126,7 @@ class ContractControllerTest {
 
         when(contractService.getContractHistory(id)).thenReturn(List.of(history));
 
-        mockMvc.perform(get("/api/contracts/{id}/history", id)
+        mockMvc.perform(get("/api/v1/contracts/{id}/history", id)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].contractId").value(id.toString()))

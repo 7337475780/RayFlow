@@ -4,6 +4,7 @@ import com.rayflow.contracts.dto.ErrorResponse;
 import com.rayflow.contracts.dto.ValidationErrorDetail;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,12 +16,15 @@ import java.time.Instant;
 import java.util.List;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     // Handles missing database lookups (HTTP 404)
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
             ResourceNotFoundException ex, HttpServletRequest request) {
+        
+        log.warn("Resource not found at path: {} - {}", request.getRequestURI(), ex.getMessage());
         
         ErrorResponse error = new ErrorResponse(
                 Instant.now(),
@@ -37,6 +41,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
+        
+        log.warn("Validation failed for request body at path: {}", request.getRequestURI());
         
         List<ValidationErrorDetail> validationErrors = ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> new ValidationErrorDetail(
@@ -60,6 +66,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(
             ConstraintViolationException ex, HttpServletRequest request) {
+        
+        log.warn("Parameter constraint violation at path: {} - {}", request.getRequestURI(), ex.getMessage());
         
         List<ValidationErrorDetail> validationErrors = ex.getConstraintViolations().stream()
                 .map(violation -> {
@@ -93,6 +101,8 @@ public class GlobalExceptionHandler {
                 : "unknown";
         String message = String.format("Parameter '%s' should be of type %s", ex.getName(), requiredTypeName);
 
+        log.warn("Request parameter type mismatch at path: {} - {}", request.getRequestURI(), message);
+
         ErrorResponse error = new ErrorResponse(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -109,8 +119,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAllExceptions(
             Exception ex, HttpServletRequest request) {
         
-        // In a real application, inject an SLF4J logger and output the full stacktrace:
-        // log.error("Unhandled exception caught: ", ex);
+        log.error("Unhandled system exception at path: {}", request.getRequestURI(), ex);
         
         ErrorResponse error = new ErrorResponse(
                 Instant.now(),

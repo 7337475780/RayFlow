@@ -62,21 +62,21 @@ export const api = {
     params.append('sortBy', filters.sortBy || 'createdAt');
     params.append('sortDir', filters.sortDir || 'desc');
 
-    return fetchJson<PaginatedResponse<Contract>>(`${API_BASE_URL}/api/contracts?${params.toString()}`, {
+    return fetchJson<PaginatedResponse<Contract>>(`${API_BASE_URL}/api/v1/contracts?${params.toString()}`, {
       cache: 'no-store', // Ensures server components bypass caches to fetch real-time state from DB
     });
   },
 
   // Fetch detailed contract metadata by UUID
   getContractById: async (id: string): Promise<Contract> => {
-    return fetchJson<Contract>(`${API_BASE_URL}/api/contracts/${id}`, {
+    return fetchJson<Contract>(`${API_BASE_URL}/api/v1/contracts/${id}`, {
       cache: 'no-store',
     });
   },
 
   // Fetch sorted change event histories for a specific contract
   getContractHistory: async (id: string): Promise<WorkflowHistory[]> => {
-    return fetchJson<WorkflowHistory[]>(`${API_BASE_URL}/api/contracts/${id}/history`, {
+    return fetchJson<WorkflowHistory[]>(`${API_BASE_URL}/api/v1/contracts/${id}/history`, {
       cache: 'no-store',
     });
   },

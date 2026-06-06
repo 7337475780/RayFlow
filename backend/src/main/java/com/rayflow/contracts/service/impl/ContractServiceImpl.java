@@ -11,6 +11,7 @@ import com.rayflow.contracts.repository.WorkflowHistoryRepository;
 import com.rayflow.contracts.repository.specification.ContractSpecification;
 import com.rayflow.contracts.service.ContractService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class ContractServiceImpl implements ContractService {
 
     private final ContractRepository contractRepository;
@@ -30,6 +32,9 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     public Page<ContractResponse> getContracts(String title, String ownerName, ContractStatus status, Pageable pageable) {
+        log.info("Fetching contracts page with filters - title: '{}', owner: '{}', status: '{}' (page: {}, size: {})", 
+                title, ownerName, status, pageable.getPageNumber(), pageable.getPageSize());
+        
         Specification<Contract> spec = Specification.where(ContractSpecification.hasTitleLike(title))
                 .and(ContractSpecification.hasOwnerLike(ownerName))
                 .and(ContractSpecification.hasStatus(status));
@@ -40,15 +45,20 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     public ContractResponse getContractById(UUID id) {
+        log.info("Fetching contract details for ID: {}", id);
         return contractRepository.findById(id)
                 .map(ContractMapper::toContractResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Contract not found with ID: " + id));
+                .orElseThrow(() -> {
+                    log.warn("Contract details lookup failed - ID {} not found", id);
+                    return new ResourceNotFoundException("Contract not found with ID: " + id);
+                });
     }
 
     @Override
     public List<WorkflowHistoryResponse> getContractHistory(UUID id) {
-        // Pre-validate that the target contract actually exists to avoid returning empty 200 OK for missing IDs
+        log.info("Fetching workflow history for contract ID: {}", id);
         if (!contractRepository.existsById(id)) {
+            log.warn("Contract history lookup failed - contract ID {} not found", id);
             throw new ResourceNotFoundException("Contract not found with ID: " + id);
         }
 

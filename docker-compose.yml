@@ -6,9 +6,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=rayflow_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=${DB_NAME:-rayflow_db}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
     volumes:
       # Named volume for persistent database storage
       - postgres_data:/var/lib/postgresql/data
@@ -16,7 +16,7 @@ services:
       - ./db/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
       - ./db/sample_data.sql:/docker-entrypoint-initdb.d/2-sample_data.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d rayflow_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-rayflow_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,9 +30,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DATABASE_URL=jdbc:postgresql://db:5432/rayflow_db
-      - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=postgres
+      - DATABASE_URL=jdbc:postgresql://db:5432/${DB_NAME:-rayflow_db}
+      - DATABASE_USERNAME=${DB_USER:-postgres}
+      - DATABASE_PASSWORD=${DB_PASSWORD:-postgres}
     depends_on:
       db:
         condition: service_healthy

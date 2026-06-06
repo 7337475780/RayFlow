@@ -50,11 +50,16 @@ Docker Compose builds the Spring Boot app and launches the PostgreSQL container.
     ```bash
     cd RayFlow
     ```
-2.  Build and launch the services in the background:
+2.  Duplicate the template environment file and customize your credentials:
+    ```bash
+    cp .env.example .env
+    # Or on Windows CMD: copy .env.example .env
+    ```
+3.  Build and launch the services in the background:
     ```bash
     docker-compose up --build
     ```
-3.  Verify container health statuses. Once the database health checks pass, the Spring Boot backend service starts automatically on port `8080`.
+4.  Verify container health statuses. Once the database health checks pass, the Spring Boot backend service starts automatically on port `8080`.
 
 ### Exposed Interfaces
 *   **Backend REST API:** `http://localhost:8080`

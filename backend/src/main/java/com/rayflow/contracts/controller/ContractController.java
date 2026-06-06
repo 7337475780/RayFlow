@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/contracts")
+@RequestMapping("/api/v1/contracts")
 @RequiredArgsConstructor
 @Validated
 @CrossOrigin(origins = "*") // Allows API consumption by the Next.js frontend

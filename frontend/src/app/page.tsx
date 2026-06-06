@@ -1,6 +1,10 @@
 import { api } from '@/lib/api';
-import { ContractFilters } from '@/types';
+import { ContractFilters, ContractStatus } from '@/types';
 import DashboardClient from './DashboardClient';
+
+function isContractStatus(status: string): status is ContractStatus {
+  return ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'EXPIRED', 'TERMINATED'].includes(status);
+}
 
 export default async function DashboardPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -14,7 +18,9 @@ export default async function DashboardPage(props: {
   const filters: ContractFilters = {
     title: typeof resolvedSearchParams.title === 'string' ? resolvedSearchParams.title : undefined,
     owner: typeof resolvedSearchParams.owner === 'string' ? resolvedSearchParams.owner : undefined,
-    status: typeof resolvedSearchParams.status === 'string' ? (resolvedSearchParams.status as any) : undefined,
+    status: typeof resolvedSearchParams.status === 'string' && isContractStatus(resolvedSearchParams.status)
+        ? resolvedSearchParams.status
+        : undefined,
     page: parseInt(pageStr, 10),
     size: parseInt(sizeStr, 10),
     sortBy: typeof resolvedSearchParams.sortBy === 'string' ? resolvedSearchParams.sortBy : 'createdAt',
