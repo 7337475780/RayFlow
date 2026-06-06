@@ -1,95 +1,55 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { api } from '@/lib/api';
+import { ContractFilters } from '@/types';
+import DashboardClient from './DashboardClient';
 
-export default function Home() {
+export default async function DashboardPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const resolvedSearchParams = await props.searchParams;
+
+  // Extract pagination indices and build clean filter descriptors
+  const pageStr = typeof resolvedSearchParams.page === 'string' ? resolvedSearchParams.page : '0';
+  const sizeStr = typeof resolvedSearchParams.size === 'string' ? resolvedSearchParams.size : '10';
+  
+  const filters: ContractFilters = {
+    title: typeof resolvedSearchParams.title === 'string' ? resolvedSearchParams.title : undefined,
+    owner: typeof resolvedSearchParams.owner === 'string' ? resolvedSearchParams.owner : undefined,
+    status: typeof resolvedSearchParams.status === 'string' ? (resolvedSearchParams.status as any) : undefined,
+    page: parseInt(pageStr, 10),
+    size: parseInt(sizeStr, 10),
+    sortBy: typeof resolvedSearchParams.sortBy === 'string' ? resolvedSearchParams.sortBy : 'createdAt',
+    sortDir: resolvedSearchParams.sortDir === 'asc' ? 'asc' : 'desc',
+  };
+
+  let contractsPage;
+  let errorMsg: string | undefined;
+
+  try {
+    contractsPage = await api.getContracts(filters);
+  } catch (error: any) {
+    errorMsg = error instanceof Error 
+        ? error.message 
+        : 'Could not connect to the RayFlow API services. Please verify the backend is running.';
+        
+    // Return empty payload envelope to allow graceful error card rendering
+    contractsPage = {
+      content: [],
+      totalPages: 0,
+      totalElements: 0,
+      size: filters.size || 10,
+      number: filters.page || 0,
+      numberOfElements: 0,
+      first: true,
+      last: true,
+      empty: true,
+    };
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    <DashboardClient
+      initialContracts={contractsPage}
+      initialFilters={filters}
+      errorMsg={errorMsg}
+    />
   );
 }
