@@ -144,6 +144,26 @@ export default function DashboardClient({ initialContracts, initialFilters, erro
         </div>
       ) : (
         <>
+          {/* Dashboard Stats Panel */}
+          <section className="stats-grid">
+            <div className="glass-panel stat-card">
+              <div className="stat-card-title">Total Agreements</div>
+              <div className="stat-card-value">{totalElements}</div>
+            </div>
+            <div className="glass-panel stat-card stat-approved">
+              <div className="stat-card-title">Approved Contracts</div>
+              <div className="stat-card-value">{contracts.filter(c => c.status === 'APPROVED').length}</div>
+            </div>
+            <div className="glass-panel stat-card stat-pending">
+              <div className="stat-card-title">Pending Review</div>
+              <div className="stat-card-value">{contracts.filter(c => c.status === 'PENDING_APPROVAL').length}</div>
+            </div>
+            <div className="glass-panel stat-card stat-action">
+              <div className="stat-card-title">Action Required</div>
+              <div className="stat-card-value">{contracts.filter(c => c.status === 'REJECTED' || c.status === 'DRAFT').length}</div>
+            </div>
+          </section>
+
           {/* Interactive Filters Grid */}
           <section className="glass-panel" style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
