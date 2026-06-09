@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Contract, ContractFilters, ContractStatus, PaginatedResponse } from '@/types';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 interface DashboardClientProps {
   initialContracts: PaginatedResponse<Contract>;
@@ -20,6 +21,10 @@ export default function DashboardClient({ initialContracts, initialFilters, erro
   const [titleInput, setTitleInput] = useState(initialFilters.title || '');
   const [ownerInput, setOwnerInput] = useState(initialFilters.owner || '');
   const [statusInput, setStatusInput] = useState<ContractStatus | ''>(initialFilters.status || '');
+
+  // Mock Authentication State
+  const [currentUserRole, setCurrentUserRole] = useState<'USER' | 'ADMIN'>('USER');
+  const [currentUsername, setCurrentUsername] = useState('John Doe');
 
   // Transition state to handle background refresh loading without page jumps
   const [isPending, startTransition] = useTransition();
@@ -114,6 +119,19 @@ export default function DashboardClient({ initialContracts, initialFilters, erro
     }
   };
 
+  const handleTerminate = async (id: string) => {
+    if (!window.confirm("Are you sure you want to terminate this contract?")) return;
+    try {
+      await api.terminateContract(id, currentUsername, currentUserRole);
+      // Trigger a soft refresh by pushing the same URL
+      startTransition(() => {
+        router.push(`${pathname}?${searchParams.toString()}`);
+      });
+    } catch (err: any) {
+      alert(`Failed to terminate: ${err.message || 'Unknown error'}`);
+    }
+  };
+
   const { content: contracts, totalPages, number: currentPage, totalElements } = initialContracts;
 
   return (
@@ -125,12 +143,28 @@ export default function DashboardClient({ initialContracts, initialFilters, erro
           <p style={{ marginTop: '4px' }}>Monitor and audit enterprise agreements and approval lifecycles.</p>
         </div>
         
-        {isPending && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '13px' }}>Syncing data...</span>
-            <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Mock Auth Toggles */}
+          <div className="glass-panel" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '500' }}>Logged in as:</span>
+            <select 
+              value={currentUserRole}
+              onChange={(e) => setCurrentUserRole(e.target.value as 'USER' | 'ADMIN')}
+              className="form-input"
+              style={{ padding: '4px 8px', fontSize: '13px', minWidth: '100px' }}
+            >
+              <option value="USER">USER</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
           </div>
-        )}
+
+          {isPending && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '13px' }}>Syncing data...</span>
+              <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+            </div>
+          )}
+        </div>
       </header>
 
       {errorMsg ? (
@@ -257,10 +291,19 @@ export default function DashboardClient({ initialContracts, initialFilters, erro
                           </span>
                         </td>
                         <td>{formatDate(contract.createdAt)}</td>
-                        <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                        <td style={{ textAlign: 'right', paddingRight: '24px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                           <Link href={`/contracts/${contract.id}`} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '13px', textDecoration: 'none' }}>
                             Details
                           </Link>
+                          {contract.status === 'APPROVED' && currentUserRole === 'ADMIN' && (
+                            <button
+                              onClick={() => handleTerminate(contract.id)}
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '13px', color: 'var(--status-rejected)', borderColor: 'var(--status-rejected)' }}
+                            >
+                              Terminate
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))

@@ -36,8 +36,13 @@ public class ContractServiceImpl implements ContractService {
                 title, ownerName, status, pageable.getPageNumber(), pageable.getPageSize());
         
         Specification<Contract> spec = Specification.where(ContractSpecification.hasTitleLike(title))
-                .and(ContractSpecification.hasOwnerLike(ownerName))
-                .and(ContractSpecification.hasStatus(status));
+                .and(ContractSpecification.hasOwnerLike(ownerName));
+                
+        if (status != null) {
+            spec = spec.and(ContractSpecification.hasStatus(status));
+        } else {
+            spec = spec.and(ContractSpecification.isNotTerminated());
+        }
 
         return contractRepository.findAll(spec, pageable)
                 .map(ContractMapper::toContractResponse);
@@ -65,5 +70,44 @@ public class ContractServiceImpl implements ContractService {
         return workflowHistoryRepository.findByContractIdOrderByChangedAtDesc(id).stream()
                 .map(ContractMapper::toWorkflowHistoryResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public ContractResponse terminateContract(UUID id, String username, String role) {
+        log.info("Attempting to terminate contract ID: {} by user: {} with role: {}", id, username, role);
+
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            log.warn("Termination failed - user {} is not an ADMIN", username);
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, 
+                "Only an ADMIN can terminate a contract."
+            );
+        }
+
+        Contract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found with ID: " + id));
+
+        if (contract.getStatus() != ContractStatus.APPROVED) {
+            log.warn("Termination failed - contract ID {} is not APPROVED", id);
+            throw new IllegalStateException("Contract must be in APPROVED state to be terminated.");
+        }
+
+        ContractStatus previousStatus = contract.getStatus();
+        contract.setStatus(ContractStatus.TERMINATED);
+        
+        contract = contractRepository.save(contract);
+
+        WorkflowHistory history = WorkflowHistory.builder()
+                .contract(contract)
+                .previousStatus(previousStatus)
+                .newStatus(ContractStatus.TERMINATED)
+                .changedBy(username)
+                .build();
+                
+        workflowHistoryRepository.save(history);
+
+        log.info("Successfully terminated contract ID: {}", id);
+        return ContractMapper.toContractResponse(contract);
     }
 }

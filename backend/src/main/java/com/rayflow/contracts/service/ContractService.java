@@ -19,4 +19,7 @@ public interface ContractService {
     
     // Retrieve the chronological workflow history of a specific contract
     List<WorkflowHistoryResponse> getContractHistory(UUID id);
+    
+    // Terminate a contract (ADMIN only)
+    ContractResponse terminateContract(UUID id, String username, String role);
 }

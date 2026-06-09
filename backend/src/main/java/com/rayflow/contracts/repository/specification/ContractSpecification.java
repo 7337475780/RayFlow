@@ -36,4 +36,9 @@ public class ContractSpecification {
             return cb.equal(root.get("status"), status);
         };
     }
+
+    // Exclude terminated contracts
+    public static Specification<Contract> isNotTerminated() {
+        return (root, query, cb) -> cb.notEqual(root.get("status"), ContractStatus.TERMINATED);
+    }
 }

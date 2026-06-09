@@ -79,4 +79,24 @@ public class ContractController {
         List<WorkflowHistoryResponse> history = contractService.getContractHistory(id);
         return ResponseEntity.ok(history);
     }
+
+    @PatchMapping("/{id}/terminate")
+    @Operation(
+        summary = "Terminate a contract", 
+        description = "Changes the contract status to TERMINATED. Requires ADMIN role passed via X-User-Role header."
+    )
+    public ResponseEntity<ContractResponse> terminateContract(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-User-Role", defaultValue = "USER") String role,
+            @RequestHeader(value = "X-User-Name", defaultValue = "System") String username
+    ) {
+        try {
+            ContractResponse response = contractService.terminateContract(id, username, role);
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage()
+            );
+        }
+    }
 }

@@ -80,4 +80,15 @@ export const api = {
       cache: 'no-store',
     });
   },
+
+  // Terminate a contract (requires ADMIN role)
+  terminateContract: async (id: string, username: string, role: string): Promise<Contract> => {
+    return fetchJson<Contract>(`${API_BASE_URL}/api/v1/contracts/${id}/terminate`, {
+      method: 'PATCH',
+      headers: {
+        'X-User-Name': username,
+        'X-User-Role': role,
+      },
+    });
+  },
 };
